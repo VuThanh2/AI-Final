@@ -28,7 +28,7 @@ def calculate_and_print_results(game: GoGame, heuristic: Optional[SimpleGoHeuris
     else:
         print("Result: Tie")
 
-# --- GAME MODES ---
+# --- GAME MODES `1---
 
 def start_game_mode(is_ai_mode: bool):
     """Initializes and runs the selected game mode."""
