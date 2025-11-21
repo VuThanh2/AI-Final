@@ -144,7 +144,7 @@ class GoUI:
 
 
     def draw_game_over(self):
-        score_black, score_white = self.game.calculate_score_for_calculation()
+        score_black, score_white = self.game.calculate_score_for_evaluation()
 
         # If game ended by give up
         if hasattr(self.game, "winner"):

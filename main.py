@@ -7,7 +7,7 @@ from typing import Optional
 def calculate_and_print_results(game: GoGame, heuristic: Optional[SimpleGoHeuristic]):
     print("\n--- Final Game Summary (Base on Heuristic Evaluation) ---")
 
-    score_black, score_white = game.calculate_score_for_calculation()
+    score_black, score_white = game.calculate_score_for_evaluation()
     
     print(f"Final Captures (B/W): {game.captured_black} / {game.captured_white}")
     print(f"Estimated Final Score (B/W, including Komi): {score_black:.1f} / {score_white:.1f}")

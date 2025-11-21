@@ -19,7 +19,7 @@ class SimpleGoHeuristic(GoHeuristic):
 
     def evaluate(self, game_object: GoGame) -> float:
         #Calculates the heuristic score based on Terminal State, Material, Safety, and Territory.
-        score_black, score_white = game_object.calculate_score_for_calculation()
+        score_black, score_white = game_object.calculate_score_for_evaluation()
         
         #1. Terminal state check 
         if game_object.is_game_over:
@@ -45,16 +45,16 @@ class SimpleGoHeuristic(GoHeuristic):
         liberty_different = 0.0
         territory_different = 0.0
 
-        for r in range(game.SIZE):
-            for c in range(game.SIZE):
-                if visited[r, c]:
+        for row in range(game.SIZE):
+            for collumn in range(game.SIZE):
+                if visited[row, collumn]:
                     continue
 
-                cell = game.grid[r, c]
+                cell = game.grid[row, collumn]
 
                 if cell != game.EMPTY:
                     # Stone group
-                    liberties, group = game.get_group_info(r, c, game.grid)
+                    liberties, group = game.get_group_info(row, collumn, game.grid)
                     for gr, gc in group:
                         visited[gr, gc] = True
 
@@ -73,7 +73,7 @@ class SimpleGoHeuristic(GoHeuristic):
 
                 else:
                     # Empty region (territory)
-                    region, borders = self.bfs_empty_region(game, r, c, visited)
+                    region, borders = self.bfs_empty_region(game, row, collumn, visited)
                     for rr, rc in region:
                         visited[rr, rc] = True
 

@@ -159,7 +159,7 @@ class GoGame:
     
     #Scoring for Heuristic
 
-    def calculate_score_for_calculation(self) -> Tuple[float, float]:
+    def calculate_score_for_evaluation(self) -> Tuple[float, float]:
         #Calculate score based on stones + captures + Komi
         score_black = self.captured_black + np.sum(self.grid == self.BLACK)
         score_white = self.captured_white + np.sum(self.grid == self.WHITE) + self.KOMI
