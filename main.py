@@ -3,18 +3,9 @@ from agent import MinimaxAgent
 from heuristic import SimpleGoHeuristic
 from ui import GoUI
 from typing import Optional
-import numpy as np
-
-
-def print_board(grid: np.ndarray):
-    size = grid.shape[0]
-    print("  " + " ".join(map(str, range(size))))
-    for i, row in enumerate(grid):
-        stones = ['.', 'B', 'W']
-        print(f"{i} " + " ".join([stones[x] for x in row]))
 
 def calculate_and_print_results(game: GoGame, heuristic: Optional[SimpleGoHeuristic]):
-    print("\n--- Final Game Summary ---")
+    print("\n--- Final Game Summary (Base on Heuristic Evaluation) ---")
 
     score_black, score_white = game.calculate_score_for_calculation()
     
@@ -28,15 +19,12 @@ def calculate_and_print_results(game: GoGame, heuristic: Optional[SimpleGoHeuris
     else:
         print("Result: Tie")
 
-# --- GAME MODES ---
+#GAME MODES 
 
 def start_game_mode(is_ai_mode: bool):
-    """Initializes and runs the selected game mode."""
     GAME_SIZE = 9
     game = GoGame(size=GAME_SIZE)
     
-    # Set a very low limit for demonstration purposes.
-    # L=12 means 6 moves each, which ensures a fast demo.
     MAX_TURNS_LIMIT = 20 
     
     if is_ai_mode:
@@ -44,15 +32,11 @@ def start_game_mode(is_ai_mode: bool):
         agent = MinimaxAgent(heuristic = heuristic, depth_limit = 2) 
         print(f"Starting Mode 1: Human (Click) vs. AI (Minimax L={agent.depth_limit})")
         
-        # Pass the results function AND the max_turns limit
-        GoUI(game, agent).run_game(is_ai_mode=True, results_function=calculate_and_print_results, max_turns=MAX_TURNS_LIMIT)
+        GoUI(game, agent).run_game(is_ai_mode=True, results_function=calculate_and_print_results, max_turns = MAX_TURNS_LIMIT)
     else:
         print("Starting Mode 2: Human (Click) vs. Human (Click)")
         
-        # Pass the results function AND the max_turns limit
         GoUI(game).run_game(is_ai_mode=False, results_function=calculate_and_print_results, max_turns=MAX_TURNS_LIMIT)
-
-# ... (rest of the file content remains the same)
 
 if __name__ == '__main__':
     valid_input = False

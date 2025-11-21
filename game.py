@@ -4,7 +4,6 @@ from collections import deque
 from copy import deepcopy
 
 class GoGame:
-    #Manage the full game state, rules, and move transitions (Problem Class)
     SIZE, EMPTY, BLACK, WHITE = 9, 0, 1, 2
     KOMI = 7.5
 
@@ -18,7 +17,7 @@ class GoGame:
         self.ko_point = kwargs.get('ko_point', None)
         self.is_game_over = kwargs.get('is_game_over', False)
 
-    def _get_neighbors(self, row: int, collumn: int) -> List[Tuple[int, int]]:
+    def get_neighbors(self, row: int, collumn: int) -> List[Tuple[int, int]]:
         #Return adjacent points
         neighbors = []
         for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
@@ -27,7 +26,7 @@ class GoGame:
                 neighbors.append((nr, nc))
         return neighbors
     
-    def _get_group_info(self, row: int, collumn: int, grid:np.ndarray) -> Tuple[int, List[Tuple[int, int]]]:
+    def get_group_info(self, row: int, collumn: int, grid:np.ndarray) -> Tuple[int, List[Tuple[int, int]]]:
         #Calculate liberties and return group stone for the stone at (r, c)
         #Simplified implementation of BFS/DFS to find liberties and group
         if grid[row, collumn] == self.EMPTY: return 0, []
@@ -41,7 +40,7 @@ class GoGame:
         while queue:
             current_row, current_collumn = queue.popleft()
             group_stones.append((current_row, current_collumn))
-            for nr, nc in self._get_neighbors(current_row, current_collumn):
+            for nr, nc in self.get_neighbors(current_row, current_collumn):
                 point = (nr, nc)
                 if point not in visited:
                     if grid[nr, nc] == self.EMPTY:
@@ -53,7 +52,7 @@ class GoGame:
     
     #Rule Checks
 
-    def _check_suicide(self, row:int, collumn:int, player: int) -> bool:
+    def check_suicide(self, row:int, collumn:int, player: int) -> bool:
         #Check if placing a stone at (r, c) results in suicide
         temp_grid = self.grid.copy()
         temp_grid[row, collumn] = player
@@ -61,14 +60,14 @@ class GoGame:
         opponent = self.WHITE if player == self.BLACK else self.BLACK
 
         #Check for capture (capture prevent suicide)
-        for nr, nc in self._get_neighbors(row, collumn):
+        for nr, nc in self.get_neighbors(row, collumn):
             if temp_grid[nr, nc] == opponent:
-                liberties_opp, _ = self._get_group_info(nr, nc, temp_grid)
+                liberties_opp, _ = self.get_group_info(nr, nc, temp_grid)
                 if liberties_opp == 0:
                     return False
                 
         #Check if the resulting friendly group has at least one liberty
-        liberties, _ = self._get_group_info(row, collumn, temp_grid)
+        liberties, _ = self.get_group_info(row, collumn, temp_grid)
         return liberties == 0
 
     def is_valid_move(self, row: int, collumn: int) -> bool:
@@ -76,7 +75,7 @@ class GoGame:
         player = self.current_player
         if not (0 <= row < self.SIZE and 0 <= collumn < self.SIZE): return False
         if self.grid[row, collumn] != self.EMPTY: return False
-        if self._check_suicide(row, collumn, player): return False
+        if self.check_suicide(row, collumn, player): return False
         if self.ko_point and self.ko_point == (row, collumn) : return False
         return True
     
@@ -91,38 +90,42 @@ class GoGame:
     
     #States Transition (Key for Minimax)
 
-    def get_next_state(self, move: Optional[Tuple[int, int]]) -> 'GoGame':
-        #Calculate and return a new GoGame object after the move
-        player= self.current_player
-
-        #1.Prepare context for the new state by the deep copying curretn state
+    def get_next_state(self, move: Optional[Tuple[int,int]]) -> 'GoGame':
+        player = self.current_player
         context = deepcopy(vars(self))
         context['current_player'] = self.WHITE if player == self.BLACK else self.BLACK
         context['ko_point'] = None
 
         if move is None:
-            #Handle Pass
-            context ['consecutive_passes'] += 1 
+            context['consecutive_passes'] += 1
         else:
-            #Handle Stone Placement and Captures
             row, collumn = move
             new_grid = context['grid'].copy()
             new_grid[row, collumn] = player
-
-            new_grid, new_ko, captured_count = self._calculate_captures(new_grid, move, player, context)
-
+            new_grid, new_ko, captured_count = self.calculate_captures(new_grid, move, player, context)
             context['grid'] = new_grid
             context['ko_point'] = new_ko
             context['consecutive_passes'] = 0
 
         new_game = GoGame(**context)
 
+        # End game if two consecutive passes OR neither player has legal moves
         if new_game.consecutive_passes >= 2:
             new_game.is_game_over = True
+        else:
+            # Check if both players have no legal moves
+            if len(new_game.get_valid_moves()) == 0:
+                # Temporarily switch to previous player
+                temp_player = new_game.current_player
+                new_game.current_player = player
+                if len(new_game.get_valid_moves()) == 0:
+                    new_game.is_game_over = True
+                new_game.current_player = temp_player
 
         return new_game
+
     
-    def _calculate_captures(self, grid: np.ndarray, move: Tuple[int, int], player: int, context: dict) -> Tuple[np.ndarray, Optional[Tuple[int, int]], int]:
+    def calculate_captures(self, grid: np.ndarray, move: Tuple[int, int], player: int, context: dict) -> Tuple[np.ndarray, Optional[Tuple[int, int]], int]:
         #Calculate captures, removes them from the grid, updates score context, and return ko info
         row, collumn = move
         opponent = self.WHITE if player == self.BLACK else self.BLACK
@@ -130,18 +133,17 @@ class GoGame:
         total_captured = 0
         new_ko_point = None
 
-        for nr, nc in self._get_neighbors(row, collumn):
-            if board_state[nr, nc] == opponent:
-                liberties, group = self._get_group_info(nr, nc, board_state)
+        for new_row, new_collumn in self.get_neighbors(row, collumn):
+            if board_state[new_row, new_collumn] == opponent:
+                liberties, group = self.get_group_info(new_row, new_collumn, board_state)
 
                 if liberties == 0:
-                    # --- FIX APPLIED: All logic relying on captured_count is correctly nested ---
                     captured_count = len(group)
                     total_captured += captured_count
 
                     #Remove the captured group
-                    for cr, cc in group:
-                        board_state[cr, cc] = self.EMPTY
+                    for captured_row, captured_collumn in group:
+                        board_state[captured_row, captured_collumn] = self.EMPTY
 
                     #Update score in the context dictionary
                     if player == self.BLACK:
