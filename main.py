@@ -29,7 +29,7 @@ def start_game_mode(is_ai_mode: bool):
     
     if is_ai_mode:
         heuristic = SimpleGoHeuristic()
-        agent = MinimaxAgent(heuristic = heuristic, depth_limit = 2) 
+        agent = MinimaxAgent(heuristic = heuristic, depth_limit = 3) 
         print(f"Starting Mode 1: Human (Click) vs. AI (Minimax L={agent.depth_limit})")
         
         GoUI(game, agent).run_game(is_ai_mode=True, results_function=calculate_and_print_results, max_turns = MAX_TURNS_LIMIT)
